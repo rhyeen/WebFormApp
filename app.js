@@ -42,13 +42,6 @@ STATICS.routes = {
   getAllItemsOfType: STATICS.routeRoots.tableSelection + "/items"
 };
 
-var itemTypes = [
-  "ability",
-  "item",
-  "skill",
-  "spell"
-];
-
 var express = require('express');
 
 var path = require('path');
@@ -67,6 +60,7 @@ i18n.configure({
   directory: __dirname + '/locales'
 });
 
+// using mongoose for almost everything
 var mysql = require('mysql');
 var pool = mysql.createPool({
   connectionLimit : 20,
@@ -75,6 +69,158 @@ var pool = mysql.createPool({
   password: 'ret2fli9',
   database: 'dd_alpha'
 });
+
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://0.0.0.0/dd_alpha', function (err) {
+  if (err) {
+    console.error("ERROR: Could not connect to database:\n" + err);
+  }
+});
+// connect to db
+var schemas = {},
+    models = {};
+
+var itemTypes = [
+  "ability",
+  "item",
+  "skill",
+  "spell"
+];
+
+schemas['ability'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  'type of ability': String,
+  target: String,
+  'number of targets': Number,
+  'range (ft)': Number,
+  'radius (ft)': Number,
+  'radius type': String,
+  description: String
+});
+
+schemas['item'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  'weight (lbs)': Number,
+  'value (gold)': Number,
+  'primary type': String,
+  description: String
+});
+
+schemas['skill'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  attribute: String,
+  'type of skill': String,
+  description: String
+});
+
+schemas['spell'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  level: Number,
+  'mana cost': Number,
+  'cast type': String,
+  'cast time': Number,
+  components: String,
+  'duration type': String,
+  'duration time': Number,
+  target: String,
+  'number of targets': Number,
+  'range (ft)': Number,
+  'radius (ft)': Number,
+  'radius type': String,
+  damage: [String],
+  'damage type': [String],
+  description: String
+});
+
+schemas['ammunition'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  'quantity for value': Number,
+  'type of ammunition': String
+});
+
+schemas['arcane'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  rarity: String,
+  'hidden property': String
+});
+
+schemas['armor'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  'type of armor': String,
+  'armor modifier': Number,
+  'dodge modifier': Number,
+  'magic resist modifier': Number
+});
+
+schemas['consumable'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  'type of consumable': String,
+  rarity: String,
+  'locality of ingredient': String,
+  'hidden property': String
+});
+
+schemas['gear'] = mongoose.Schema({
+  rpg: String,
+  name: String
+});
+
+schemas['melee_weapon'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  'throw range (ft)': Number,
+  property: String,
+  damage: [String],
+  'damage type': [String]
+});
+
+schemas['miscellaneous'] = mongoose.Schema({
+  rpg: String,
+  name: String
+});
+
+schemas['ranged_weapon'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  'range (ft)': Number,
+  property: String,
+  damage: [String],
+  'damage type': [String]
+});
+
+schemas['tool'] = mongoose.Schema({
+  rpg: String,
+  name: String
+});
+
+schemas['valuable'] = mongoose.Schema({
+  rpg: String,
+  name: String,
+  rarity: String
+});
+
+models['ability'] = mongoose.model('ability', schemas['ability']);
+models['item'] = mongoose.model('item', schemas['item']);
+models['skill'] = mongoose.model('skill', schemas['skill']);
+models['spell'] = mongoose.model('spell', schemas['spell']);
+models['ammunition'] = mongoose.model('ammunition', schemas['ammunition']);
+models['arcane'] = mongoose.model('arcane', schemas['arcane']);
+models['armor'] = mongoose.model('armor', schemas['armor']);
+models['consumable'] = mongoose.model('consumable', schemas['consumable']);
+models['gear'] = mongoose.model('gear', schemas['gear']);
+models['melee_weapon'] = mongoose.model('melee_weapon', schemas['melee_weapon']);
+models['miscellaneous'] = mongoose.model('miscellaneous', schemas['miscellaneous']);
+models['ranged_weapon'] = mongoose.model('ranged_weapon', schemas['ranged_weapon']);
+models['tool'] = mongoose.model('tool', schemas['tool']);
+models['valuable'] = mongoose.model('valuable', schemas['valuable']);
 
 var app = express();
 
@@ -133,8 +279,8 @@ app.use([STATICS.routeEndpoints.admin], function (req, res, next) {
 });
 
 // back-end calls
-var genericTableQueries = require('./lib/generic-table-queries/index')(app, pool, STATICS, bodyParser, itemTypes);
-var tableSelection = require('./lib/table-selection/index')(app, pool, STATICS, bodyParser, itemTypes);
+var genericTableQueries = require('./lib/generic-table-queries/index')(app, models, STATICS, bodyParser, itemTypes);
+var tableSelection = require('./lib/table-selection/index')(app, models, STATICS, bodyParser, itemTypes);
 
 //var userAuth = require('./lib/user-auth/index')(app, pool, STATICS, bodyParser, bcrypt, jwt, jwtSecretKey);
 
